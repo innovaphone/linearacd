@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<voicemail xmlns="http://www.innovaphone.com/xsd/voicemail6.xsd">
+  <!-- Place call. IN $number=e164, OUT $call-result=away(CFU),busy,unreachable(unregistered),timeout(no answer) -->
+  <function define="call">
+    <!-- Assign 'happy end' as default  -->
+    <assign out="$call-result" value="ok" />
+    <if cond="$number">
+      <!-- check, whether a CFU is active  -->
+      <pbx-finduser-e164 e164="$number" out-cn="$cn" />
+      <if cond="$cn">
+        <pbx-query-obj name="$cn" type="cfu" out="$cfu" />
+        <if cond="$cfu">
+          <assign out="$call-result" value="away" />
+          <return />
+        </if>
+      </if>
+      <!-- try to forward the call with no response timeout of 15 sec. adjust it according your needs -->
+      <pbx-fwd e164="$number" out-cause="$cause" barge-in="false"
+      sec="15" />
+      <!-- validate the cause code and assign the result to $call-result -->
+      <switch var="$cause">
+        <case equal="17">
+          <assign out="$call-result" value="busy" />
+          <assign out="$busy" value="true" />
+        </case>
+        <case equal="18">
+          <assign out="$call-result" value="unreachable" />
+        </case>
+        <case equal="128">
+          <assign out="$call-result" value="timeout" />
+        </case>
+      </switch>
+    </if>
+  </function>
+  <function define="Main">
+    <assign out="$prefix" value="1" />
+    <lib-strcat out-string="$file" string="$prefix"
+    string2=".txt" />
+    <store-cookie root="" name="$file" out="$number" />
+    <while cond="$number">
+      <call name="call" />
+      <!-- call current $number  -->
+      <switch var="$call-result">
+        <case equal="ok">
+          <pbx-disc />
+          <!-- happy end  -->
+        </case>
+      </switch>
+      <!-- next round  -->
+      <add value="$prefix" value2="1" out="$prefix" />
+      <lib-strcat out-string="$file" string="$prefix"
+      string2=".txt" />
+      <assign out="$number" value="" />
+      <store-cookie root="" name="$file" out="$number" />
+    </while>
+    <!-- if any agents were busy -->
+    <if cond="$busy">
+      <!-- Silence (just a workaround to be able to disconnect with busy cause)  -->
+      <store-get root="" name="silence.g711a" out-url="$ctrl" />
+      <pbx-prompt url="$ctrl" sec="1" barge-in="false" />
+      <!-- disconnect call with cause code 17 (busy)-->
+      <pbx-disc cause="17" />
+    </if>
+    <else>
+      <!-- otherwise read voicemail number from vm.txt -->
+      <store-cookie root="" name="vm.txt" out="$vmdummy" />
+      <!-- and forward the call to voicemail -->
+      <pbx-fwd e164="$vmdummy" />
+    </else>
+  </function>
+</voicemail>
+
+<!-- Simple Linear ACD with VoiceMail XML Script wiki-src/xml/LinearACD 1,0,0,0 (C) innovaphone AG 2010-2010 -->
