@@ -33,9 +33,15 @@
     </if>
   </function>
   <function define="Main">
+	  <!-- check if the incoming call was a control call without audio, eg. a presence call -->
+	  <pbx-getcallinfo out-ctl-call="$ctl_call" />
+	  <if cond="$ctl_call">
+		  <dbg string="disconnect control call" />
+		  <pbx-disc />
+	  </if>
+
     <assign out="$prefix" value="1" />
-    <lib-strcat out-string="$file" string="$prefix"
-    string2=".txt" />
+    <lib-strcat out-string="$file" string="$prefix" string2=".txt" />
     <store-cookie root="" name="$file" out="$number" />
     <while cond="$number">
       <call name="call" />
