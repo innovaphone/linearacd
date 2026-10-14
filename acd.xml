@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<voicemail xmlns="http://www.innovaphone.com/xsd/voicemail6.xsd">
+<voicemail xmlns="https://www.innovaphone.com/xsd/voicemail6.xsd">
   <!-- Place call. IN $number=e164, OUT $call-result=away(CFU),busy,unreachable(unregistered),timeout(no answer) -->
   <function define="call">
     <!-- Assign 'happy end' as default  -->
